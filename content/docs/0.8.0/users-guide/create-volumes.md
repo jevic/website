@@ -12,7 +12,7 @@ kubectl create -f https://raw.githubusercontent.com/longhorn/longhorn/master/exa
 
 Now you can create a pod using Longhorn like this:
 ```
-kubectl create -f https://raw.githubusercontent.com/longhorn/longhorn/master/examples/pvc.yaml
+kubectl create -f https://raw.githubusercontent.com/longhorn/longhorn/master/examples/simple_pvc.yaml
 ```
 
 The above yaml file contains two parts:
@@ -21,14 +21,14 @@ The above yaml file contains two parts:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: longhorn-volv-pvc
+  name: longhorn-simple-pvc
 spec:
   accessModes:
     - ReadWriteOnce
   storageClassName: longhorn
   resources:
     requests:
-      storage: 2Gi
+      storage: 1Gi
 ```
 
 2. Use it in the a Pod as a persistent volume:
@@ -36,21 +36,29 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: volume-test
+  name: longhorn-simple-pod
   namespace: default
 spec:
+  restartPolicy: Always
   containers:
-  - name: volume-test
-    image: nginx:stable-alpine
-    imagePullPolicy: IfNotPresent
-    volumeMounts:
-    - name: volv
-      mountPath: /data
-    ports:
-    - containerPort: 80
+    - name: volume-test
+      image: nginx:stable-alpine
+      imagePullPolicy: IfNotPresent
+      livenessProbe:
+        exec:
+          command:
+            - ls
+            - /data/lost+found
+        initialDelaySeconds: 5
+        periodSeconds: 5
+      volumeMounts:
+        - name: volv
+          mountPath: /data
+      ports:
+        - containerPort: 80
   volumes:
-  - name: volv
-    persistentVolumeClaim:
-      claimName: longhorn-volv-pvc
+    - name: volv
+      persistentVolumeClaim:
+        claimName: longhorn-simple-pvc
 ```
 More examples are available at `../examples/`
